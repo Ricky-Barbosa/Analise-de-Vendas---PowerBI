@@ -1,0 +1,26 @@
+let
+    Fonte = Excel.Workbook(File.Contents("C:\Users\Ricky\Ricky\Analise de dados\Base de dados\Base de dados loja 2\Base de dados.xlsx"), null, true),
+    Sheet1_Sheet = Fonte{[Item="Sheet1",Kind="Sheet"]}[Data],
+    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Sheet1_Sheet, [PromoteAllScalars=true]),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"id_pedido", type text}, {"data", type datetime}, {"loja", type text}, {"cidade", type text}, {"estado", type text}, {"regiao", type text}, {"tamanho", type text}, {"local_consumo", type text}, {"preco", Int64.Type}, {"forma_pagamento", type text}, {"ano_mes", type date}}),
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Tipo Alterado",{{"id_pedido", "numero do pedido"}}),
+    #"Índice Adicionado" = Table.AddIndexColumn(#"Colunas Renomeadas", "Índice", 1, 1, Int64.Type),
+    #"Colunas Reordenadas" = Table.ReorderColumns(#"Índice Adicionado",{"Índice", "numero do pedido", "data", "loja", "cidade", "estado", "regiao", "tamanho", "local_consumo", "preco", "forma_pagamento", "ano_mes"}),
+    #"Colunas Renomeadas1" = Table.RenameColumns(#"Colunas Reordenadas",{{"Índice", "id"}}),
+    #"Colunas Removidas" = Table.RemoveColumns(#"Colunas Renomeadas1",{"id"}),
+    #"Personalização Adicionada" = Table.AddColumn(#"Colunas Removidas", "Personalizar", each Number.From(Text.Select([Loja], {"0".."9"}))),
+    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Personalização Adicionada",{{"Personalizar", Int64.Type}}),
+    #"Colunas Removidas1" = Table.RemoveColumns(#"Tipo Alterado1",{"Personalizar"}),
+    #"Personalização Adicionada1" = Table.AddColumn(#"Colunas Removidas1", "Loja.1", each Number.FromText(Text.Select([loja], {"0".."9"}))),
+    #"Tipo Alterado2" = Table.TransformColumnTypes(#"Personalização Adicionada1",{{"Loja.1", Int64.Type}}),
+    #"Linhas Classificadas" = Table.Sort(#"Tipo Alterado2",{{"Loja.1", Order.Ascending}}),
+    #"Colunas Removidas2" = Table.RemoveColumns(#"Linhas Classificadas",{"Loja.1"}),
+    #"Linhas Classificadas1" = Table.Sort(#"Colunas Removidas2",{{"ano_mes", Order.Ascending}, {"loja", Order.Ascending}}),
+    #"Índice Adicionado1" = Table.AddIndexColumn(#"Linhas Classificadas1", "Índice", 1, 1, Int64.Type),
+    #"Colunas Renomeadas2" = Table.RenameColumns(#"Índice Adicionado1",{{"Índice", "id"}}),
+    #"Colunas Reordenadas1" = Table.ReorderColumns(#"Colunas Renomeadas2",{"id", "numero do pedido", "data", "loja", "cidade", "estado", "regiao", "tamanho", "local_consumo", "preco", "forma_pagamento", "ano_mes"}),
+    #"Tipo Alterado3" = Table.TransformColumnTypes(#"Colunas Reordenadas1",{{"data", type date}, {"preco", type number}}),
+    #"Colunas Renomeadas3" = Table.RenameColumns(#"Tipo Alterado3",{{"numero do pedido", "código do pedido"}}),
+    #"Linhas em Branco Removidas" = Table.SelectRows(#"Colunas Renomeadas3", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null})))
+in
+    #"Linhas em Branco Removidas"
